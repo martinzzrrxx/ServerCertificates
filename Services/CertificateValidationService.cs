@@ -47,12 +47,21 @@ public static partial class CertificateValidationService
         var hostnameMatch = IsHostnameMatch(targetUri.Host, leafCertificate, out var hostnameMessage);
         if (!hostnameMatch)
         {
-            serverIssues.Add(new CertificateValidationIssue(
+            var hostnameIssue = new CertificateValidationIssue(
                 "HostnameMismatch",
                 "Hostname mismatch",
                 hostnameMessage,
                 ValidationSeverity.Error,
-                "Hostname"));
+                "Hostname");
+
+            diagnostics[0] = new CertificateValidationDiagnostic
+            {
+                Thumbprint = diagnostics[0].Thumbprint,
+                SourceChainIndex = diagnostics[0].SourceChainIndex,
+                RebuiltChainIndex = diagnostics[0].RebuiltChainIndex,
+                UsedInValidatedChain = diagnostics[0].UsedInValidatedChain,
+                Issues = diagnostics[0].Issues.Concat([hostnameIssue]).ToList()
+            };
         }
 
         return new ServerCertificateValidationResult

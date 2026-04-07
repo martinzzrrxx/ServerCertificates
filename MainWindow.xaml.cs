@@ -59,10 +59,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             if (SetField(ref _lastValidationResult, value))
             {
                 OnPropertyChanged(nameof(HasValidationSummary));
-                OnPropertyChanged(nameof(OverallValidationLabel));
-                OnPropertyChanged(nameof(HostnameValidationLabel));
-                OnPropertyChanged(nameof(ChainTrustLabel));
-                OnPropertyChanged(nameof(ServerIssuesLabel));
+                OnPropertyChanged(nameof(HasValidationError));
             }
         }
     }
@@ -71,25 +68,9 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public bool HasValidationSummary => LastValidationResult is not null;
 
-    public string OverallValidationLabel => LastValidationResult is null
-        ? "Not evaluated"
-        : LastValidationResult.ServerIssues.Any(issue => issue.Severity == ValidationSeverity.Error)
-            ? "Failed"
-            : LastValidationResult.ServerIssues.Any(issue => issue.Severity == ValidationSeverity.Warning)
-                ? "Warning"
-                : "Passed";
-
-    public string HostnameValidationLabel => LastValidationResult is null
-        ? "Not evaluated"
-        : LastValidationResult.IsHostnameMatch ? "Passed" : "Failed";
-
-    public string ChainTrustLabel => LastValidationResult is null
-        ? "Not evaluated"
-        : LastValidationResult.IsChainTrusted ? "Passed" : "Failed";
-
-    public string ServerIssuesLabel => LastValidationResult is null
-        ? "No validation results yet"
-        : $"{LastValidationResult.ServerIssues.Count} server-level issue(s)";
+    public bool HasValidationError => LastValidationResult is not null &&
+                                      (!LastValidationResult.IsChainTrusted ||
+                                       LastValidationResult.ServerIssues.Any(issue => issue.Severity == ValidationSeverity.Error));
 
     private async void FetchCertificates_Click(object sender, RoutedEventArgs e)
     {
@@ -122,7 +103,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
             LastValidationResult = validationResult;
             StatusMessage = Certificates.Count > 0
-                ? BuildValidationSummary(validationResult)
+                ? string.Empty
                 : "Connected, but the server did not return a displayable certificate chain.";
         }
         catch (Exception ex)
@@ -169,14 +150,6 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         return true;
-    }
-
-    private static string BuildValidationSummary(ServerCertificateValidationResult validationResult)
-    {
-        var issues = validationResult.ServerIssues.Count;
-        var trustText = validationResult.IsChainTrusted ? "trusted" : "not trusted";
-        var hostnameText = validationResult.IsHostnameMatch ? "hostname matched" : "hostname mismatch";
-        return $"Validation complete: chain {trustText}, {hostnameText}, {issues} server-level issue(s).";
     }
 
     private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
