@@ -201,6 +201,32 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="UnusedChainBadgeStyle" TargetType="Border">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Background" Value="#FFFEF3C7" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ShouldShowNotUsedBadge}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="ValidatedOnlyBadgeStyle" TargetType="Border">
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Setter Property="Margin" Value="8,0,0,0" />
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="Background" Value="#FFE2E8F0" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding ShouldShowValidatedOnlyBadge}" Value="True">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="RoundedTextBoxStyle" TargetType="TextBox">
             <Setter Property="Background" Value="White" />
             <Setter Property="BorderBrush" Value="#FFD6DFEA" />
@@ -399,11 +425,44 @@
                                                                     <TextBlock Style="{StaticResource StatusChipTextStyle}"
                                                                                Text="{Binding ValidationStatusLabel}" />
                                                                 </Border>
+                                                                <Border VerticalAlignment="Center"
+                                                                        Style="{StaticResource UnusedChainBadgeStyle}">
+                                                                    <TextBlock FontSize="12"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="#FF92400E"
+                                                                               Text="Not Used" />
+                                                                </Border>
+                                                                <Border VerticalAlignment="Center"
+                                                                        Style="{StaticResource ValidatedOnlyBadgeStyle}">
+                                                                    <TextBlock FontSize="12"
+                                                                               FontWeight="SemiBold"
+                                                                               Foreground="#FF334155"
+                                                                               Text="Validated Only" />
+                                                                </Border>
                                                             </StackPanel>
 
                                                             <TextBlock Margin="0,6,0,0"
                                                                        Foreground="#FF475569"
                                                                        Text="{Binding ChainPosition}" />
+
+                                                            <TextBlock Margin="0,4,0,0"
+                                                                       Foreground="#FF92400E"
+                                                                       FontSize="12"
+                                                                       Text="{Binding ChainSourceSummary}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding ShouldShowChainSourceSummary}" Value="True">
+                                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                            </DataTrigger>
+                                                                            <DataTrigger Binding="{Binding ShouldShowValidatedOnlyBadge}" Value="True">
+                                                                                <Setter Property="Foreground" Value="#FF475569" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
 
                                                             <TextBlock Margin="0,6,0,0"
                                                                        Foreground="#FF64748B"
@@ -489,6 +548,9 @@
                                                         <TextBlock Style="{StaticResource LabelStyle}" Text="Serial Number" />
                                                         <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding SerialNumber}" />
 
+                                                        <TextBlock Style="{StaticResource LabelStyle}" Text="Used In Validated Chain" />
+                                                        <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding UsedInValidatedChainLabel}" />
+
                                                         <TextBlock Style="{StaticResource LabelStyle}" Text="Valid From" />
                                                         <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding NotBefore}" />
 
@@ -508,6 +570,9 @@
                                                         <TextBlock Style="{StaticResource LabelStyle}" Text="Public Key" />
                                                         <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding PublicKeyAlgorithm}" />
                                                         <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding PublicKeyLength}" />
+
+                                                        <TextBlock Style="{StaticResource LabelStyle}" Text="Validated Chain Position" />
+                                                        <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding ValidatedChainPosition}" />
 
                                                         <TextBlock Style="{StaticResource LabelStyle}" Text="Subject Alternative Names" />
                                                         <TextBlock Style="{StaticResource ValueStyle}" Text="{Binding SubjectAlternativeNames}" />

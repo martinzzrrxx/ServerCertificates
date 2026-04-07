@@ -4,13 +4,31 @@ using System.Net.Security;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using ServerCertViewer.Models;
 
 namespace ServerCertViewer.Services;
 
 public static class CertificateChainFetcher
 {
-    public static async Task<IReadOnlyList<X509Certificate2>> FetchAsync(Uri uri, CancellationToken cancellationToken = default)
+    public static async Task<CertificateFetchResult> FetchAsync(Uri uri, CancellationToken cancellationToken = default)
     {
+        try
+        {
+            var rawServerChain = await TlsRawCertificateFetcher.FetchAsync(uri, cancellationToken);
+            if (rawServerChain.Count > 0)
+            {
+                return new CertificateFetchResult
+                {
+                    Certificates = rawServerChain,
+                    Source = CertificateFetchSource.RawServerSent
+                };
+            }
+        }
+        catch
+        {
+            // Fall back to SslStream-based capture when raw TLS certificate parsing is unavailable.
+        }
+
         List<X509Certificate2>? capturedChain = null;
 
         using var tcpClient = new TcpClient();
@@ -36,7 +54,11 @@ public static class CertificateChainFetcher
 
         if (capturedChain is { Count: > 0 })
         {
-            return capturedChain;
+            return new CertificateFetchResult
+            {
+                Certificates = capturedChain,
+                Source = CertificateFetchSource.SslStreamFallback
+            };
         }
 
         if (sslStream.RemoteCertificate is null)
@@ -50,7 +72,11 @@ public static class CertificateChainFetcher
         rebuiltChain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllowUnknownCertificateAuthority;
         rebuiltChain.Build(remoteCertificate);
 
-        return CreateChainSnapshot(remoteCertificate, rebuiltChain);
+        return new CertificateFetchResult
+        {
+            Certificates = CreateChainSnapshot(remoteCertificate, rebuiltChain),
+            Source = CertificateFetchSource.SslStreamFallback
+        };
     }
 
     private static List<X509Certificate2> CreateChainSnapshot(X509Certificate? certificate, X509Chain? chain)

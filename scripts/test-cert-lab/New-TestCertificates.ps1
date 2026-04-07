@@ -57,6 +57,10 @@ Export-CertificateArtifacts -Certificate $root -BasePath (Join-Path $paths.Roots
 Export-CertificateArtifacts -Certificate $intermediateA -BasePath (Join-Path $paths.IntermediatesDirectory "intermediate-a") -Password $securePassword
 Export-CertificateArtifacts -Certificate $intermediateB -BasePath (Join-Path $paths.IntermediatesDirectory "intermediate-b") -Password $securePassword
 Export-CertificateArtifacts -Certificate $leaf -BasePath (Join-Path $paths.LeafDirectory "leaf-localhost") -Password $securePassword
+Export-CertificatePemArtifacts -Certificate $root -BasePath (Join-Path $paths.RootsDirectory "test-root")
+Export-CertificatePemArtifacts -Certificate $intermediateA -BasePath (Join-Path $paths.IntermediatesDirectory "intermediate-a")
+Export-CertificatePemArtifacts -Certificate $intermediateB -BasePath (Join-Path $paths.IntermediatesDirectory "intermediate-b")
+Export-CertificatePemArtifacts -Certificate $leaf -BasePath (Join-Path $paths.LeafDirectory "leaf-localhost")
 
 $validatedOnlyDir = Join-Path $paths.ScenariosDirectory "validated-only"
 $notUsedDir = Join-Path $paths.ScenariosDirectory "not-used"
@@ -65,10 +69,23 @@ New-Item -ItemType Directory -Path $notUsedDir -Force | Out-Null
 
 Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost.pfx") (Join-Path $validatedOnlyDir "server.pfx") -Force
 Copy-Item (Join-Path $paths.IntermediatesDirectory "intermediate-a.cer") (Join-Path $validatedOnlyDir "chain-1-intermediate-a.cer") -Force
+Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost-cert.pem") (Join-Path $validatedOnlyDir "server-cert.pem") -Force
+Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost-key.pem") (Join-Path $validatedOnlyDir "server-key.pem") -Force
+$validatedOnlyChainPem = @(
+    (Get-Content (Join-Path $paths.IntermediatesDirectory "intermediate-a-cert.pem") -Raw).Trim()
+) -join [Environment]::NewLine
+Set-Content -Path (Join-Path $validatedOnlyDir "chain.pem") -Value ($validatedOnlyChainPem + [Environment]::NewLine) -NoNewline -Encoding ASCII
 
 Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost.pfx") (Join-Path $notUsedDir "server.pfx") -Force
 Copy-Item (Join-Path $paths.IntermediatesDirectory "intermediate-a.cer") (Join-Path $notUsedDir "chain-1-intermediate-a.cer") -Force
 Copy-Item (Join-Path $paths.IntermediatesDirectory "intermediate-b.cer") (Join-Path $notUsedDir "chain-2-extra-intermediate-b.cer") -Force
+Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost-cert.pem") (Join-Path $notUsedDir "server-cert.pem") -Force
+Copy-Item (Join-Path $paths.LeafDirectory "leaf-localhost-key.pem") (Join-Path $notUsedDir "server-key.pem") -Force
+$notUsedChainPem = @(
+    (Get-Content (Join-Path $paths.IntermediatesDirectory "intermediate-a-cert.pem") -Raw).Trim()
+    (Get-Content (Join-Path $paths.IntermediatesDirectory "intermediate-b-cert.pem") -Raw).Trim()
+) -join [Environment]::NewLine
+Set-Content -Path (Join-Path $notUsedDir "chain.pem") -Value ($notUsedChainPem + [Environment]::NewLine) -NoNewline -Encoding ASCII
 
 [System.IO.File]::WriteAllText($paths.PasswordPath, $Password)
 

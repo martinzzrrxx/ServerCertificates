@@ -207,6 +207,44 @@ Implement the smallest useful version first.
 - saved validation history
 - comparison across multiple hosts
 
+## TLS Helper Follow-Up
+
+The current app can validate chains with `SslStream`, but accurately capturing the
+server-sent certificate chain for `TLS 1.3` needs a different architecture.
+
+Reason:
+
+- in `TLS 1.3`, the certificate message is normally encrypted after `ServerHello`
+- a lightweight raw TLS parser is not a reliable long-term solution
+- if the tool is meant to compare "server-sent chain" against "locally rebuilt chain",
+  it needs a helper built on a TLS stack that exposes the peer-sent chain directly
+
+Planned direction:
+
+- add a small `TLS Helper` process or library dedicated to handshake capture
+- helper responsibilities:
+  - connect with `TLS 1.2 / 1.3`
+  - return the peer-sent certificate chain
+  - report negotiated TLS version and handshake metadata
+- main WPF app responsibilities:
+  - display the server-sent chain
+  - rebuild the local validation chain with `X509Chain`
+  - compare both views and highlight differences
+
+Suggested helper contract:
+
+- input:
+  - target host
+  - target port
+  - SNI host
+- output:
+  - negotiated TLS version
+  - server-sent chain
+  - optional handshake notes / errors
+
+This helper should be treated as the long-term fix for reliable `TLS 1.3`
+certificate-chain analysis.
+
 ## UI Proposal
 
 ### Top Summary Area

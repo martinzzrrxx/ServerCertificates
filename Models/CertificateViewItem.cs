@@ -8,10 +8,16 @@ namespace ServerCertViewer.Models;
 
 public sealed class CertificateViewItem
 {
-    public CertificateViewItem(X509Certificate2 certificate, int index)
+    public CertificateViewItem(
+        X509Certificate2 certificate,
+        int index,
+        bool isServerProvided = true,
+        bool canDisplayChainDiff = false)
     {
         Certificate = certificate;
         Index = index;
+        IsServerProvided = isServerProvided;
+        CanDisplayChainDiff = canDisplayChainDiff;
         DisplayName = string.IsNullOrWhiteSpace(certificate.GetNameInfo(X509NameType.SimpleName, false))
             ? $"Certificate {index}"
             : certificate.GetNameInfo(X509NameType.SimpleName, false);
@@ -71,7 +77,29 @@ public sealed class CertificateViewItem
 
     public ValidationSeverity ValidationSeverity { get; private set; } = ValidationSeverity.Info;
 
-    public string ChainPosition => Index == 0 ? "Leaf" : $"Intermediate / Root #{Index}";
+    public bool UsedInValidatedChain { get; private set; } = true;
+
+    public string UsedInValidatedChainLabel => UsedInValidatedChain ? "Yes" : "No";
+
+    public string ValidatedChainPosition { get; private set; } = "Not used";
+
+    public bool IsServerProvided { get; }
+
+    public bool IsValidatedOnly => !IsServerProvided;
+
+    public bool CanDisplayChainDiff { get; }
+
+    public bool ShouldShowValidatedOnlyBadge => CanDisplayChainDiff && IsValidatedOnly;
+
+    public bool ShouldShowNotUsedBadge => CanDisplayChainDiff && IsServerProvided && !UsedInValidatedChain;
+
+    public bool ShouldShowChainSourceSummary => ShouldShowValidatedOnlyBadge || ShouldShowNotUsedBadge;
+
+    public string ChainPosition => IsValidatedOnly
+        ? "Validated chain only"
+        : Index == 0
+            ? "Leaf"
+            : $"Intermediate / Root #{Index}";
 
     public bool HasValidationIssues => ValidationIssues.Count > 0;
 
@@ -91,10 +119,22 @@ public sealed class CertificateViewItem
         _ => $"{ValidationIssues.Count} validation issues"
     };
 
+    public string ChainSourceSummary => IsValidatedOnly
+        ? "Present in validated chain only."
+        : UsedInValidatedChain
+            ? string.Empty
+            : "Not used in validated chain.";
+
     public void ApplyValidationDiagnostic(CertificateValidationDiagnostic? diagnostic)
     {
         ValidationIssues = diagnostic?.Issues ?? [];
         ValidationSeverity = diagnostic?.Severity ?? ValidationSeverity.Info;
+        UsedInValidatedChain = diagnostic?.UsedInValidatedChain ?? true;
+        ValidatedChainPosition = diagnostic is null
+            ? "Unknown"
+            : diagnostic.RebuiltChainIndex is int rebuiltIndex
+                ? rebuiltIndex == 0 ? "Leaf" : $"Validated chain #{rebuiltIndex + 1}"
+                : "Not used";
     }
 
     private static string ReadExtensionValue(X509Certificate2 certificate, string oid)

@@ -16,6 +16,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private string _statusMessage = string.Empty;
     private bool _isBusy;
     private ServerCertificateValidationResult? _lastValidationResult;
+    private CertificateFetchSource _lastFetchSource;
 
     public MainWindow()
     {
@@ -26,6 +27,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public ObservableCollection<CertificateViewItem> Certificates { get; } = [];
+
 
     public string UrlInput
     {
@@ -68,6 +70,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public bool HasValidationSummary => LastValidationResult is not null;
 
+    public bool IsChainDifferenceReliable => _lastFetchSource == CertificateFetchSource.RawServerSent;
+
     public bool HasValidationError => LastValidationResult is not null &&
                                       (!LastValidationResult.IsChainTrusted ||
                                        LastValidationResult.ServerIssues.Any(issue => issue.Severity == ValidationSeverity.Error));
@@ -83,20 +87,59 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         IsBusy = true;
         Certificates.Clear();
         LastValidationResult = null;
+        _lastFetchSource = CertificateFetchSource.SslStreamFallback;
         OnPropertyChanged(nameof(EmptyStateVisibility));
+        OnPropertyChanged(nameof(IsChainDifferenceReliable));
         StatusMessage = $"Connecting to {uri.Host}:{uri.Port}...";
 
         try
         {
-            var certificates = await CertificateChainFetcher.FetchAsync(uri);
+            var fetchResult = await CertificateChainFetcher.FetchAsync(uri);
+            var certificates = fetchResult.Certificates;
+            _lastFetchSource = fetchResult.Source;
+            OnPropertyChanged(nameof(IsChainDifferenceReliable));
             var validationResult = CertificateValidationService.Validate(uri, certificates);
 
             for (var i = 0; i < certificates.Count; i++)
             {
-                var item = new CertificateViewItem(certificates[i], i);
+                var item = new CertificateViewItem(certificates[i], i, canDisplayChainDiff: IsChainDifferenceReliable);
                 var diagnostic = validationResult.CertificateDiagnostics.FirstOrDefault(result =>
                     result.SourceChainIndex == i &&
                     string.Equals(result.Thumbprint, item.Thumbprint, StringComparison.OrdinalIgnoreCase));
+                item.ApplyValidationDiagnostic(diagnostic);
+                Certificates.Add(item);
+            }
+
+
+            var serverThumbprints = new HashSet<string>(
+                certificates
+                    .Select(certificate => certificate.Thumbprint)
+                    .Where(thumbprint => !string.IsNullOrWhiteSpace(thumbprint))!
+                    .Select(thumbprint => thumbprint!),
+                StringComparer.OrdinalIgnoreCase);
+
+            foreach (var diagnostic in validationResult.CertificateDiagnostics
+                         .Where(result => result.SourceChainIndex < 0)
+                         .OrderBy(result => result.RebuiltChainIndex ?? int.MaxValue))
+            {
+                var rebuiltIndex = diagnostic.RebuiltChainIndex;
+                if (rebuiltIndex is null || rebuiltIndex.Value >= validationResult.RebuiltChain.Count)
+                {
+                    continue;
+                }
+
+                var rebuiltCertificate = validationResult.RebuiltChain[rebuiltIndex.Value];
+                if (string.IsNullOrWhiteSpace(rebuiltCertificate.Thumbprint) ||
+                    !serverThumbprints.Add(rebuiltCertificate.Thumbprint))
+                {
+                    continue;
+                }
+
+                var item = new CertificateViewItem(
+                    rebuiltCertificate,
+                    Certificates.Count,
+                    isServerProvided: false,
+                    canDisplayChainDiff: IsChainDifferenceReliable);
                 item.ApplyValidationDiagnostic(diagnostic);
                 Certificates.Add(item);
             }
@@ -108,6 +151,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
         catch (Exception ex)
         {
+            _lastFetchSource = CertificateFetchSource.SslStreamFallback;
+            OnPropertyChanged(nameof(IsChainDifferenceReliable));
             LastValidationResult = null;
             StatusMessage = $"Fetch failed: {ex.Message}";
         }

@@ -94,6 +94,32 @@ function Export-CertificateArtifacts {
     [System.IO.File]::WriteAllBytes("$BasePath.pfx", $Certificate.Export([System.Security.Cryptography.X509Certificates.X509ContentType]::Pfx, $Password))
 }
 
+function Export-CertificatePemArtifacts {
+    param(
+        [Parameter(Mandatory = $true)][System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate,
+        [Parameter(Mandatory = $true)][string]$BasePath
+    )
+
+    $directory = Split-Path -Parent $BasePath
+    if (-not (Test-Path $directory)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
+    $certificatePem = $Certificate.ExportCertificatePem()
+    Set-Content -Path "$BasePath-cert.pem" -Value $certificatePem -NoNewline -Encoding ASCII
+
+    $rsa = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
+    if ($null -ne $rsa) {
+        try {
+            $privateKeyPem = $rsa.ExportPkcs8PrivateKeyPem()
+            Set-Content -Path "$BasePath-key.pem" -Value $privateKeyPem -NoNewline -Encoding ASCII
+        }
+        finally {
+            $rsa.Dispose()
+        }
+    }
+}
+
 function ConvertTo-PlainText {
     param([Parameter(Mandatory = $true)][securestring]$SecureString)
 

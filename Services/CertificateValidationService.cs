@@ -43,6 +43,19 @@ public static partial class CertificateValidationService
             .Select((certificate, index) => BuildDiagnostic(certificate, index, rebuiltIndexByThumbprint, chain))
             .ToList();
 
+        var serverThumbprints = new HashSet<string>(
+            serverChain
+                .Select(certificate => certificate.Thumbprint)
+                .Where(thumbprint => !string.IsNullOrWhiteSpace(thumbprint))!
+                .Select(thumbprint => thumbprint!),
+            StringComparer.OrdinalIgnoreCase);
+
+        diagnostics.AddRange(rebuiltChain
+            .Select((certificate, index) => new { certificate, index })
+            .Where(item => !string.IsNullOrWhiteSpace(item.certificate.Thumbprint) &&
+                           !serverThumbprints.Contains(item.certificate.Thumbprint!))
+            .Select(item => BuildDiagnostic(item.certificate, -1, rebuiltIndexByThumbprint, chain)));
+
         var serverIssues = MapChainStatuses(chain.ChainStatus);
         var hostnameMatch = IsHostnameMatch(targetUri.Host, leafCertificate, out var hostnameMessage);
         if (!hostnameMatch)
@@ -93,15 +106,7 @@ public static partial class CertificateValidationService
         }
         else
         {
-            issues =
-            [
-                new CertificateValidationIssue(
-                    "UnusedByValidatedChain",
-                    "Not used in validated chain",
-                    "The operating system did not use this certificate when rebuilding the final validation path.",
-                    ValidationSeverity.Info,
-                    "ChainRebuild")
-            ];
+            issues = [];
         }
 
         return new CertificateValidationDiagnostic
