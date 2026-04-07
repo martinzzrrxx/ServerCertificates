@@ -1,0 +1,19 @@
+{
+  "createdAt": "2026-04-07T08:59:40.3372709+00:00",
+  "rootSubject": "CN=ServerCertViewer Test Root",
+  "intermediateA": "CN=ServerCertViewer Intermediate A",
+  "intermediateB": "CN=ServerCertViewer Extra Intermediate B",
+  "leafSubject": "CN=localhost",
+  "scenarios": [
+    {
+      "url": "https://localhost:9443/",
+      "name": "validated-only",
+      "description": "Server sends leaf plus Intermediate A. Root should appear as Validated Only once the root is trusted locally."
+    },
+    {
+      "url": "https://localhost:9444/",
+      "name": "not-used",
+      "description": "Server sends leaf plus Intermediate A and an extra Intermediate B. Intermediate B should be marked Not Used."
+    }
+  ]
+}
