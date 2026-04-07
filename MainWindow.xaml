@@ -29,32 +29,69 @@
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="14"
                                 SnapsToDevicePixels="True">
-                            <DockPanel>
-                                <ToggleButton x:Name="HeaderSite"
-                                              DockPanel.Dock="Top"
-                                              Margin="0"
-                                              Padding="18,16"
-                                              Background="Transparent"
-                                              BorderThickness="0"
-                                              FocusVisualStyle="{x:Null}"
-                                              Foreground="#FF1E293B"
-                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
-                                              HorizontalContentAlignment="Stretch"
-                                              FontSize="15">
-                                    <ContentPresenter ContentSource="Header"
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Border x:Name="HeaderBackground"
+                                        Background="Transparent"
+                                        CornerRadius="14">
+                                    <ToggleButton x:Name="HeaderSite"
+                                                  Margin="0"
+                                                  Padding="18,16"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  FocusVisualStyle="{x:Null}"
+                                                  Foreground="#FF1E293B"
+                                                  IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                                  HorizontalContentAlignment="Stretch"
+                                                  FontSize="15">
+                                        <ToggleButton.Template>
+                                            <ControlTemplate TargetType="ToggleButton">
+                                                <Border Background="Transparent"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                                      Content="{TemplateBinding Content}"
+                                                                      ContentTemplate="{TemplateBinding ContentTemplate}" />
+                                                </Border>
+                                            </ControlTemplate>
+                                        </ToggleButton.Template>
+                                        <ContentPresenter ContentSource="Header"
+                                                          HorizontalAlignment="Stretch" />
+                                    </ToggleButton>
+                                </Border>
+
+                                <Border x:Name="ContentBackground"
+                                        Grid.Row="1"
+                                        Background="White"
+                                        CornerRadius="0,0,14,14"
+                                        Visibility="Collapsed">
+                                    <ContentPresenter x:Name="ExpandSite"
+                                                      Margin="18,0,18,18"
+                                                      ContentSource="Content"
                                                       HorizontalAlignment="Stretch" />
-                                </ToggleButton>
-                                <ContentPresenter x:Name="ExpandSite"
-                                                  Margin="18,0,18,18"
-                                                  ContentSource="Content"
-                                                  HorizontalAlignment="Stretch"
-                                                  Visibility="Collapsed" />
-                            </DockPanel>
+                                </Border>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsExpanded" Value="True">
-                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible" />
+                            <Trigger SourceName="HeaderSite" Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HeaderBackground" Property="Background" Value="#FFEAF4FB" />
                             </Trigger>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="HeaderBackground" Property="Background" Value="#FFD4E9F6" />
+                                <Setter TargetName="HeaderBackground" Property="CornerRadius" Value="14,14,0,0" />
+                                <Setter TargetName="ContentBackground" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition SourceName="HeaderSite" Property="IsMouseOver" Value="True" />
+                                    <Condition Property="IsExpanded" Value="True" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="HeaderBackground" Property="Background" Value="#FFC7E0F2" />
+                            </MultiTrigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
