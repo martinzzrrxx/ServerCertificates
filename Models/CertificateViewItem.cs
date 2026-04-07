@@ -67,7 +67,35 @@ public sealed class CertificateViewItem
 
     public string EnhancedKeyUsage { get; }
 
+    public IReadOnlyList<CertificateValidationIssue> ValidationIssues { get; private set; } = [];
+
+    public ValidationSeverity ValidationSeverity { get; private set; } = ValidationSeverity.Info;
+
     public string ChainPosition => Index == 0 ? "Leaf" : $"Intermediate / Root #{Index}";
+
+    public bool HasValidationIssues => ValidationIssues.Count > 0;
+
+    public bool HasNoValidationIssues => ValidationIssues.Count == 0;
+
+    public string ValidationStatusLabel => ValidationSeverity switch
+    {
+        ValidationSeverity.Error => "Error",
+        ValidationSeverity.Warning => "Warning",
+        _ => "Valid"
+    };
+
+    public string ValidationSummary => ValidationIssues.Count switch
+    {
+        0 => "No validation issues detected.",
+        1 => ValidationIssues[0].Title,
+        _ => $"{ValidationIssues.Count} validation issues"
+    };
+
+    public void ApplyValidationDiagnostic(CertificateValidationDiagnostic? diagnostic)
+    {
+        ValidationIssues = diagnostic?.Issues ?? [];
+        ValidationSeverity = diagnostic?.Severity ?? ValidationSeverity.Info;
+    }
 
     private static string ReadExtensionValue(X509Certificate2 certificate, string oid)
     {
