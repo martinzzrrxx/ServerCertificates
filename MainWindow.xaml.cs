@@ -70,11 +70,16 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public bool HasValidationSummary => LastValidationResult is not null;
 
-    public bool IsChainDifferenceReliable => _lastFetchSource == CertificateFetchSource.RawServerSent;
+    public bool IsChainDifferenceReliable =>
+        _lastFetchSource == CertificateFetchSource.RawServerSent ||
+        _lastFetchSource == CertificateFetchSource.TlsHelper;
 
-    public string ChainSourceSummary => IsChainDifferenceReliable
-        ? "Chain source: raw server-sent certificate message."
-        : "Chain source: SslStream fallback. Validated Only and Not Used are hidden for this fetch.";
+    public string ChainSourceSummary => _lastFetchSource switch
+    {
+        CertificateFetchSource.TlsHelper => "Chain source: TLS helper.",
+        CertificateFetchSource.RawServerSent => "Chain source: raw server-sent certificate message.",
+        _ => "Chain source: SslStream fallback. Validated Only and Not Used are hidden for this fetch."
+    };
 
     public bool HasValidationError => LastValidationResult is not null &&
                                       (!LastValidationResult.IsChainTrusted ||

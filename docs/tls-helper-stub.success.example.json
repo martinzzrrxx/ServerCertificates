@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "fetchSource": "TlsHelper",
+  "negotiatedTlsVersion": "TLS1.3",
+  "cipherSuite": "TLS_AES_128_GCM_SHA256",
+  "serverSentChain": [
+    {
+      "index": 0,
+      "subject": "CN=example.com",
+      "issuer": "CN=Example Intermediate",
+      "thumbprint": "REPLACE_ME",
+      "derBase64": "REPLACE_WITH_BASE64_DER_CERTIFICATE"
+    }
+  ],
+  "notes": [
+    "Replace derBase64 with a real DER-encoded certificate payload."
+  ]
+}

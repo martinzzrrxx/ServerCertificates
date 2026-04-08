@@ -10,8 +10,16 @@ namespace ServerCertViewer.Services;
 
 public static class CertificateChainFetcher
 {
+    private static readonly TlsHelperClient TlsHelperClient = new();
+
     public static async Task<CertificateFetchResult> FetchAsync(Uri uri, CancellationToken cancellationToken = default)
     {
+        var helperResult = await TlsHelperClient.TryFetchAsync(uri, cancellationToken);
+        if (helperResult is not null)
+        {
+            return helperResult;
+        }
+
         try
         {
             var rawServerChain = await TlsRawCertificateFetcher.FetchAsync(uri, cancellationToken);

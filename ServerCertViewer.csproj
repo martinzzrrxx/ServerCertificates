@@ -8,4 +8,15 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="tools\TlsHelperStub\TlsHelperStub.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="tools\TlsHelperStub\**\*.cs" />
+    <EmbeddedResource Remove="tools\TlsHelperStub\**\*" />
+    <None Remove="tools\TlsHelperStub\**\*" />
+    <Page Remove="tools\TlsHelperStub\**\*" />
+  </ItemGroup>
+
 </Project>

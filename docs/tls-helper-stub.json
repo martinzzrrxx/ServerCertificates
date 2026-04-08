@@ -1,0 +1,10 @@
+{
+  "success": false,
+  "fetchSource": "TlsHelper",
+  "errorCode": "NotConfigured",
+  "errorMessage": "Stub file present but no helper response payload has been configured yet.",
+  "serverSentChain": [],
+  "notes": [
+    "Replace this file with a success payload to simulate TLS helper output during Phase A."
+  ]
+}
