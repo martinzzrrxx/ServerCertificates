@@ -72,6 +72,10 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     public bool IsChainDifferenceReliable => _lastFetchSource == CertificateFetchSource.RawServerSent;
 
+    public string ChainSourceSummary => IsChainDifferenceReliable
+        ? "Chain source: raw server-sent certificate message."
+        : "Chain source: SslStream fallback. Validated Only and Not Used are hidden for this fetch.";
+
     public bool HasValidationError => LastValidationResult is not null &&
                                       (!LastValidationResult.IsChainTrusted ||
                                        LastValidationResult.ServerIssues.Any(issue => issue.Severity == ValidationSeverity.Error));
